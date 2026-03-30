@@ -2,6 +2,7 @@
 
 namespace Perritu\LeanDB;
 
+use PDOStatement;
 use Perritu\LeanDB\LeanDB;
 
 /**
@@ -40,4 +41,26 @@ abstract class Model
    * @var bool Enable timestamps.
    */
   public const TIMESTAMPS = true;
+
+  /**
+   * Fetch data from the database.
+   *
+   * @param array $aCriteria
+   * @return PDOStatement
+   */
+  public static function Read(array $aCriteria = []): PDOStatement
+  {
+    $oConnection = static::CONNECTION;
+    [$cWhere, $aParams] = LeanDB::buildWhere($aCriteria);
+
+    $cTable = static::TABLE;
+    if (is_null($cTable)) {
+      $cTable = array_reverse(explode('\\', static::class))[0];
+    }
+
+    $cQuery = "SELECT * FROM `{$cTable}` WHERE {$cWhere}";
+    $oPdoS = $oConnection::GetPDO()->prepare($cQuery);
+    $oPdoS->execute($aParams);
+    return $oPdoS;
+  }
 }

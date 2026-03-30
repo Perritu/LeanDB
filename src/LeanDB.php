@@ -194,4 +194,84 @@ class LeanDB
 
     return "CREATE TABLE IF NOT EXISTS `{$cTable}` (\n  {$cSqlFields}\n);";
   }
+
+  /**
+   * Build a SQL `WHERE` clause.
+   *
+   * @param array $aCriteria
+   * @param string $cOperator
+   * @return array[string, array]
+   */
+  public static function buildWhere(array $aCriteria, string $cOperator = 'AND'): array
+  {
+    $aWhere = [];
+    $aArgs  = [];
+
+    foreach ($aCriteria as $cField => $mValue) {
+      // If the key is literal '*', then it's a raw query.
+      if ($cField === '*' && is_string($mValue)) {
+        $aWhere[] = $mValue;
+        continue;
+      }
+
+      // Comparation modifiers.
+      $bNegate = substr($cField, 0, 1) === '!';
+      $bGeq    = substr($cField, -2) === '>=';
+      $bLeq    = substr($cField, -2) === '<=';
+      $bGt     = substr($cField, -1) === '>';
+      $bLt     = substr($cField, -1) === '<';
+
+      // Adjust the field name.
+      if ($bNegate) $cField = substr($cField, 1);
+      if ($bGeq)    $cField = substr($cField, 0, -2);
+      if ($bLeq)    $cField = substr($cField, 0, -2);
+      if ($bGt)     $cField = substr($cField, 0, -1);
+      if ($bLt)     $cField = substr($cField, 0, -1);
+
+      // If the value is an array and the key...
+      if (is_array($mValue)) {
+        if (is_numeric($cField)) { // ... is numeric, then it's a subquery.
+          $cSubOperator = match ($cOperator) {
+            'AND' => 'OR',
+            default => 'AND',
+          };
+          [$cSubSql, $aSubArgs] = static::buildWhere($mValue, $cSubOperator);
+          $aSubSql = explode("\n", $cSubSql);
+          foreach ($aSubSql as &$cLine) $cLine = "  {$cLine}";
+          $aWhere[] = implode("\n", [
+            '(',
+            ...$aSubSql,
+            ')',
+          ]);
+          $aArgs = array_merge($aArgs, $aSubArgs);
+        } else { // ... is non numeric, then it's a IN clause.
+          $cFiller = implode(', ', array_fill(0, count($mValue), '?'));
+          $cSubOperator = $bNegate ? 'NOT IN' : 'IN';
+          $aWhere[] = "`{$cField}` {$cSubOperator} ({$cFiller})";
+          $aArgs = array_merge($aArgs, array_values($mValue));
+        }
+        continue;
+      }
+
+      // If the value is null, then it's a NULL clause.
+      if ($mValue === null) {
+        $cSubOperator = $bNegate ? 'IS NOT NULL' : 'IS NULL';
+        $aWhere[] = "`{$cField}` {$cSubOperator}";
+        continue;
+      }
+
+      // Any other value.
+      if ($bGeq)     $aWhere[] = "`{$cField}` >= ?";
+      elseif ($bLeq) $aWhere[] = "`{$cField}` <= ?";
+      elseif ($bGt)  $aWhere[] = "`{$cField}` > ?";
+      elseif ($bLt)  $aWhere[] = "`{$cField}` < ?";
+      else           $aWhere[] = "`{$cField}` = ?";
+      $aArgs[] = $mValue;
+    }
+
+    return [
+      implode(" {$cOperator}\n", $aWhere),
+      $aArgs,
+    ];
+  }
 }
