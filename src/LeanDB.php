@@ -324,8 +324,15 @@ class LeanDB
     foreach ($aFields as $aRow) {
       $aRowSQL  = [];
       $aRowArgs = [];
-      foreach ($aHeaders as $key) {
-        $mValue = $aRow[$key] ?? null;
+      foreach ($aHeaders as $cKey) {
+        $mValue = $aRow[$cKey] ?? null;
+
+        if (is_string($mValue) || is_numeric($mValue)) {
+          $aRowSQL[] = '?';
+          $aRowArgs[] = $mValue;
+          continue;
+        }
+
         if (is_bool($mValue)) {
           $aRowSQL[] = '?';
           $aRowArgs[] = $mValue ? 1 : 0;
@@ -337,18 +344,14 @@ class LeanDB
           continue;
         }
 
-        if (!is_string($mValue) && !is_numeric($mValue)) {
-          continue 2; // Skip this row due to malformed data.
-        }
-
-        $aRowSQL[] = '?';
-        $aRowArgs[] = $mValue;
+        continue 2; // Skip this row due to malformed data.
       }
 
       $aRows[] = '(' . implode(', ', $aRowSQL) . ')';
       $aArgs = array_merge($aArgs, $aRowArgs);
     }
 
+    array_map(fn(&$cKey) => $cKey = "`{$cKey}`", $aHeaders);
     $cHeaders = '(' . implode(', ', $aHeaders) . ')';
     return [
       implode(",\n", [
