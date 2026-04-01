@@ -272,4 +272,32 @@ class LeanDB
       $aArgs,
     ];
   }
+
+  /**
+   * Build a SQL set of fields for use in `INSERT` and `UPDATE`.
+   *
+   * @param array[key=>value]|array[array[key=>value]] $aFields
+   * @return array[string,array]
+   */
+  public static function BuildSet(array $aFields): array
+  {
+    if (count($aFields) === 0) return ['', []];
+    if (!is_array($aFields[0] ?? null)) $aFields = [$aFields];
+    $aRows = [];
+    $aArgs = [];
+
+    foreach ($aFields as $aRow) {
+      $aSet = [];
+      foreach ($aRow as $cField => $mValue) {
+        $aSet[] = "`{$cField}` = ?";
+        $aArgs[] = $mValue;
+      }
+      $aRows[] = implode(', ', $aSet);
+    }
+
+    return [
+      implode(",\n", $aRows),
+      $aArgs,
+    ];
+  }
 }
