@@ -51,7 +51,7 @@ abstract class Model
   public static function Read(array $aCriteria = []): PDOStatement
   {
     $oConnection = static::CONNECTION;
-    [$cWhere, $aParams] = LeanDB::buildWhere($aCriteria);
+    [$cWhere, $aParams] = LeanDB::BuildWhere($aCriteria);
 
     $cTable = static::TABLE;
     if (is_null($cTable)) {
