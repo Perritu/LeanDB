@@ -39,4 +39,6 @@ The following prefixes are also added to standard CS or Cpp hungarian notation:
 
 ## Documentation
 
-@@TODO
+When writing or updating documentation, do so in english and follow the PHP standard for doc pages.
+
+Add each entry on it's own file in the `docs` directory. The entry name should be the same as the class it documents.
