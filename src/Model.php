@@ -43,6 +43,35 @@ abstract class Model
   public const TIMESTAMPS = true;
 
   /**
+   * Insert data into the database.
+   *
+   * @param array[key=>value]|array[array[key=>value]] $aFields
+   * @return PDOStatement
+   */
+  public static function Create(array $aFields): PDOStatement
+  {
+    $oConnection = static::CONNECTION;
+    if (
+      $oConnection === null ||
+      (static::PERMS & LeanDB::PERM_CREATE) === 0
+    ) {
+      $cClass = static::class;
+      throw new \Exception("The model class has no create permission: {$cClass}");
+    }
+
+    $cTable = static::TABLE;
+    if (is_null($cTable)) {
+      $cTable = array_reverse(explode('\\', static::class))[0];
+    }
+
+    [$cInsertSql, $aArgs] = LeanDB::BuildValues($aFields);
+    $cQuery = "INSERT INTO `{$cTable}` \n {$cInsertSql}";
+    $oPdoS = $oConnection::GetPDO()->prepare($cQuery);
+    $oPdoS->execute($aArgs);
+    return $oPdoS;
+  }
+
+  /**
    * Fetch data from the database.
    *
    * @param array $aCriteria
