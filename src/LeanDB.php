@@ -222,14 +222,11 @@ class LeanDB
       $bLt     = substr($cField, -1) === '<';
 
       // Adjust the field name.
-      if ($bNegate) $cField = substr($cField, 1);
-      if ($bGeq)    $cField = substr($cField, 0, -2);
-      if ($bLeq)    $cField = substr($cField, 0, -2);
-      if ($bGt)     $cField = substr($cField, 0, -1);
-      if ($bLt)     $cField = substr($cField, 0, -1);
+      if ($bNegate)       $cField = substr($cField, 1);
+      if ($bGeq || $bLeq) $cField = substr($cField, 0, -2);
+      if ($bGt  || $bLt)  $cField = substr($cField, 0, -1);
 
-      // If the value is an array and the key...
-      if (is_array($mValue)) {
+      if (is_array($mValue)) { // If the value is an array and the key...
         if (is_numeric($cField)) { // ... is numeric, then it's a subquery.
           $cSubOperator = match ($cOperator) {
             'AND' => 'OR',
@@ -261,11 +258,12 @@ class LeanDB
       }
 
       // Any other value.
-      if ($bGeq)     $aWhere[] = "`{$cField}` >= ?";
-      elseif ($bLeq) $aWhere[] = "`{$cField}` <= ?";
-      elseif ($bGt)  $aWhere[] = "`{$cField}` > ?";
-      elseif ($bLt)  $aWhere[] = "`{$cField}` < ?";
-      else           $aWhere[] = "`{$cField}` = ?";
+      if (($bGeq && $bNegate) || ($bLt && !$bNegate))     $aWhere[] = "`{$cField}` < ?";
+      elseif (($bLeq && $bNegate) || ($bGt && !$bNegate)) $aWhere[] = "`{$cField}` > ?";
+      elseif (($bGt && $bNegate) || ($bGeq && !$bNegate)) $aWhere[] = "`{$cField}` >= ?";
+      elseif (($bLt && $bNegate) || ($bLeq && !$bNegate)) $aWhere[] = "`{$cField}` <= ?";
+      elseif ($bNegate)                                   $aWhere[] = "`{$cField}` != ?";
+      else                                                $aWhere[] = "`{$cField}` = ?";
       $aArgs[] = $mValue;
     }
 
