@@ -132,4 +132,32 @@ abstract class Model
     $oPdoS->execute(array_merge($aSetParams, $aWhereParams));
     return $oPdoS;
   }
+
+  /**
+   * Delete data from the database.
+   *
+   * @param array $aCriteria
+   * @return PDOStatement
+   */
+  public static function Delete(array $aCriteria = []): PDOStatement
+  {
+    $oConnection = static::CONNECTION;
+    if (
+      $oConnection === null ||
+      (static::PERMS & LeanDB::PERM_DELETE) === 0
+    ) {
+      $cClass = static::class;
+      throw new \Exception("The model class has no delete permission: {$cClass}");
+    }
+
+    [$cWhere, $aParams] = LeanDB::BuildWhere($aCriteria);
+    $cTable = static::TABLE;
+    if (is_null($cTable)) {
+      $cTable = array_reverse(explode('\\', static::class))[0];
+    }
+    $cQuery = "DELETE FROM `{$cTable}` WHERE {$cWhere}";
+    $oPdoS = $oConnection::GetPDO()->prepare($cQuery);
+    $oPdoS->execute($aParams);
+    return $oPdoS;
+  }
 }
