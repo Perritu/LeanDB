@@ -50,6 +50,11 @@ abstract class Model
    */
   public static function Read(array $aCriteria = []): PDOStatement
   {
+    if ((static::PERMS & LeanDB::PERM_READ) === 0) {
+      $cClass = static::class;
+      throw new \Exception("The model class has no read permission: {$cClass}");
+    }
+
     $oConnection = static::CONNECTION;
     [$cWhere, $aParams] = LeanDB::BuildWhere($aCriteria);
 
