@@ -89,6 +89,10 @@ abstract class Model
       throw new \Exception("The model class has no read permission: {$cClass}");
     }
 
+    if (static::SOFT_DELETES) {
+      $aCriteria['__deleted_at'] = null;
+    }
+
     [$cWhere, $aParams] = LeanDB::BuildWhere($aCriteria);
 
     $cTable = static::TABLE;
@@ -150,12 +154,21 @@ abstract class Model
       throw new \Exception("The model class has no delete permission: {$cClass}");
     }
 
+    if (static::SOFT_DELETES) {
+      $aCriteria['__deleted_at'] = null;
+    }
+
     [$cWhere, $aParams] = LeanDB::BuildWhere($aCriteria);
     $cTable = static::TABLE;
     if (is_null($cTable)) {
       $cTable = array_reverse(explode('\\', static::class))[0];
     }
-    $cQuery = "DELETE FROM `{$cTable}` WHERE {$cWhere}";
+
+    if (static::SOFT_DELETES)
+      $cQuery = "UPDATE `{$cTable}` SET `__deleted_at` = NOW() WHERE {$cWhere}";
+    else
+      $cQuery = "DELETE FROM `{$cTable}` WHERE {$cWhere}";
+
     $oPdoS = $oConnection::GetPDO()->prepare($cQuery);
     $oPdoS->execute($aParams);
     return $oPdoS;
