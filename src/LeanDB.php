@@ -300,4 +300,58 @@ class LeanDB
       $aArgs,
     ];
   }
+
+  /**
+   * Build a SQL set of fields for use in `INSERT`.
+   *
+   * @param array[key=>value]|array[array[key=>value]] $aFields
+   */
+  public static function BuildValues(array $aFields): array
+  {
+    if (count($aFields) === 0) return ['', []];
+    if (!is_array($aFields[0] ?? null)) $aFields = [$aFields];
+
+    $aHeaders = [];
+    foreach ($aFields as $aRow) {
+      foreach ($aRow as $cField => $mValue) {
+        $aHeaders[$cField] = true;
+      }
+    }
+    $aHeaders = array_keys($aHeaders);
+    $aRows = [];
+    $aArgs = [];
+
+    foreach ($aFields as $aRow) {
+      $aRowSQL  = [];
+      $aRowArgs = [];
+      foreach ($aHeaders as $key) {
+        $mValue = $aRow[$key] ?? null;
+        if (is_bool($mValue)) {
+          $aRowSQL[] = '?';
+          $aRowArgs[] = $mValue ? 1 : 0;
+          continue;
+        }
+
+        if (is_null($mValue)) {
+          $aRowSQL[] = 'NULL';
+          continue;
+        }
+
+        if (!is_string($mValue) && !is_numeric($mValue)) {
+          continue 2; // Skip this row due to malformed data.
+        }
+
+        $aRowSQL[] = '?';
+        $aRowArgs[] = $mValue;
+      }
+
+      $aRows[] = '(' . implode(', ', $aRowSQL) . ')';
+      $aArgs = array_merge($aArgs, $aRowArgs);
+    }
+
+    return [
+      implode(",\n", $aRows),
+      $aArgs,
+    ];
+  }
 }
