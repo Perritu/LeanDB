@@ -101,4 +101,35 @@ abstract class Model
     $oPdoS->execute($aParams);
     return $oPdoS;
   }
+
+  /**
+   * Update data in the database.
+   *
+   * @param array[key=>value] $aFields
+   * @param array $aCriteria
+   * @return PDOStatement
+   */
+  public static function Update(array $aFields, array $aCriteria = []): PDOStatement
+  {
+    $oConnection = static::CONNECTION;
+    if (
+      $oConnection === null ||
+      (static::PERMS & LeanDB::PERM_UPDATE) === 0
+    ) {
+      $cClass = static::class;
+      throw new \Exception("The model class has no update permission: {$cClass}");
+    }
+
+    $cTable = static::TABLE;
+    if (is_null($cTable)) {
+      $cTable = array_reverse(explode('\\', static::class))[0];
+    }
+
+    [$cWhere, $aWhereParams] = LeanDB::BuildWhere($aCriteria);
+    [$cSet, $aSetParams] = LeanDB::BuildSet($aFields);
+    $cQuery = "UPDATE `{$cTable}`\nSET {$cSet}\nWHERE {$cWhere}";
+    $oPdoS = $oConnection::GetPDO()->prepare($cQuery);
+    $oPdoS->execute(array_merge($aSetParams, $aWhereParams));
+    return $oPdoS;
+  }
 }
