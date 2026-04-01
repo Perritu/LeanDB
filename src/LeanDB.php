@@ -305,6 +305,7 @@ class LeanDB
    * Build a SQL set of fields for use in `INSERT`.
    *
    * @param array[key=>value]|array[array[key=>value]] $aFields
+   * @return array[string,array]
    */
   public static function BuildValues(array $aFields): array
   {
@@ -351,7 +352,7 @@ class LeanDB
       $aArgs = array_merge($aArgs, $aRowArgs);
     }
 
-    array_map(fn(&$cKey) => $cKey = "`{$cKey}`", $aHeaders);
+    $aHeaders = array_map(fn($cKey) => "`{$cKey}`", $aHeaders);
     $cHeaders = '(' . implode(', ', $aHeaders) . ')';
     return [
       implode(",\n", [
