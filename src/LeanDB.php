@@ -200,9 +200,9 @@ class LeanDB
    *
    * @param array $aCriteria
    * @param string $cOperator
-   * @return array[string, array]
+   * @return array[string,array]
    */
-  public static function buildWhere(array $aCriteria, string $cOperator = 'AND'): array
+  public static function BuildWhere(array $aCriteria, string $cOperator = 'AND'): array
   {
     $aWhere = [];
     $aArgs  = [];
@@ -274,9 +274,9 @@ class LeanDB
   }
 
   /**
-   * Build a SQL set of fields for use in `INSERT` and `UPDATE`.
+   * Build a SQL set of fields for use in `UPDATE`.
    *
-   * @param array[key=>value]|array[array[key=>value]] $aFields
+   * @param array[key=>value] $aFields
    * @return array[string,array]
    */
   public static function BuildSet(array $aFields): array
