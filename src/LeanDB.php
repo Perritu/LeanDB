@@ -349,8 +349,13 @@ class LeanDB
       $aArgs = array_merge($aArgs, $aRowArgs);
     }
 
+    $cHeaders = '(' . implode(', ', $aHeaders) . ')';
     return [
-      implode(",\n", $aRows),
+      implode(",\n", [
+        $cHeaders,
+        'VALUES',
+        ...$aRows
+      ]),
       $aArgs,
     ];
   }
