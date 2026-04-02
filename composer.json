@@ -1,7 +1,7 @@
 {
   "name": "perritu/lean-db",
-  "version": "1.0.0-dev",
-  "minimum-stability": "rc",
+  "minimum-stability": "RC",
+  "description": "A simple and light yet powerful ORM for PHP",
   "homepage": "https://github.com/Perritu/LeanDB",
   "license": "Unlicense",
   "authors": [
