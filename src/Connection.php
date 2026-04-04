@@ -40,7 +40,7 @@ abstract class Connection
    *
    * @return PDO
    */
-  public static function GetPDO(): PDO
+  public static function &GetPDO(): PDO
   {
     if (!isset(self::$aPdo[static::class])) {
       $oCredentials = new Uri(static::GetCredentials());
