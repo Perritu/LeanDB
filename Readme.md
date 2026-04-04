@@ -7,7 +7,7 @@ A simple and light yet powerful ORM for PHP.
 The best way to install `LeanDB` is to use [Composer](https://getcomposer.org/):
 
 ```bash
-composer require perritu/leandb
+composer require perritu/lean-db
 ```
 
 Direct installation can be done, but it's not yet tested.
