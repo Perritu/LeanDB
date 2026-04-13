@@ -74,6 +74,7 @@ class LeanDB
     }
 
     $aSqlFields = [];
+    $aSqlKeys   = [];
     foreach ($aFields as $cName => $mField) {
       if (is_array($mField)) {
         $iFieldType   = $mField[0] & 15;  // first 4 bits
@@ -155,17 +156,18 @@ class LeanDB
       // Compile the field flags.
       $bNullable = ($iFieldFlags & LeanDB::NULLABLE) === LeanDB::NULLABLE;
       $bPrimary  = ($iFieldFlags & LeanDB::PKEY) === LeanDB::PKEY;
-      $bUnique   = ($iFieldFlags & LeanDB::UNIQUE) === LeanDB::UNIQUE && !$bPrimary;
-      $bIndex    = ($iFieldFlags & LeanDB::INDEX) === LeanDB::INDEX && !$bPrimary;
+      $bUnique   = ($iFieldFlags & LeanDB::PKEY) === LeanDB::UNIQUE;
+      $bIndex    = ($iFieldFlags & LeanDB::PKEY) === LeanDB::INDEX;
       $bAuto     = ($iFieldFlags & LeanDB::AUTO) === LeanDB::AUTO;
 
       $aFlags = [];
+      $aKeys  = [];
       if (!$bNullable) $aFlags[] = 'NOT NULL';
       elseif ($aDefault === null) $aFlags[] = 'NULL';
-      if ($bUnique) $aFlags[] = 'UNIQUE';
-      if ($bIndex) $aFlags[] = 'INDEX';
-      if ($bAuto) $aFlags[] = 'AUTO_INCREMENT';
       if ($bPrimary) $aFlags[] = 'PRIMARY KEY';
+      if ($bUnique) $aFlags[]  = 'UNIQUE';
+      if ($bAuto) $aFlags[]    = 'AUTO_INCREMENT';
+      if ($bIndex) $aKeys[]    = "INDEX (`{$cName}`)";
 
       if ($aDefault !== null) {
         if (is_array($aDefault)) {
@@ -180,17 +182,25 @@ class LeanDB
         $aFlags[] = "COMMENT '{$cComment}'";
       }
 
-      // $cFlags = implode(' ', $aFlags);
-      // $aSqlFields[] = "{$cName} {$cFieldType} {$cFlags}";
       $aSqlFields[] = implode(' ', [
         "`{$cName}`",
         "{$cFieldType}",
         ...$aFlags
       ]);
+
+      if (count($aKeys) > 0) {
+        $aSqlKeys[] = implode(' ', $aKeys);
+      }
     }
 
     // Build the table definition.
-    $cSqlFields = implode(",\n  ", $aSqlFields);
+    $cSqlFields = implode(
+      ",\n  ",
+      [
+        ...$aSqlFields,
+        ...$aSqlKeys,
+      ]
+    );
 
     return "CREATE TABLE IF NOT EXISTS `{$cTable}` (\n  {$cSqlFields}\n);";
   }
