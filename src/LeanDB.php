@@ -73,8 +73,9 @@ class LeanDB
       $aFields['__updated_at'] = [LeanDB::DATETIME, null, ['NOW() ON UPDATE NOW()'], 'Last update stamp'];
     }
 
-    $aSqlFields = [];
-    $aSqlKeys   = [];
+    $aSqlFields  = [];
+    $aSqlKeys    = [];
+    $aPrimaryKey = [];
     foreach ($aFields as $cName => $mField) {
       if (is_array($mField)) {
         $iFieldType   = $mField[0] & 15;  // first 4 bits
@@ -92,7 +93,8 @@ class LeanDB
 
       // Raw SQL
       if ($iFieldType === LeanDB::RAWSQL) {
-        $aSqlFields[] = "`{$cName}` {$mField[1]}";
+        if (is_int($cName)) $aSqlFields[] = $mField[1];
+        else $aSqlFields[] = "`{$cName}` {$mField[1]}";
         continue;
       }
 
@@ -164,7 +166,8 @@ class LeanDB
       $aKeys  = [];
       if (!$bNullable) $aFlags[] = 'NOT NULL';
       elseif ($aDefault === null) $aFlags[] = 'NULL';
-      if ($bPrimary) $aFlags[] = 'PRIMARY KEY';
+      if ($bPrimary) $aPrimaryKey[] = "`{$cName}`";
+
       if ($bUnique) $aFlags[]  = 'UNIQUE';
       if ($bAuto) $aFlags[]    = 'AUTO_INCREMENT';
       if ($bIndex) $aKeys[]    = "INDEX (`{$cName}`)";
@@ -191,6 +194,11 @@ class LeanDB
       if (count($aKeys) > 0) {
         $aSqlKeys[] = implode(' ', $aKeys);
       }
+    }
+
+    // Build the primary key.
+    if (count($aPrimaryKey) > 0) {
+      $aSqlKeys[] = "PRIMARY KEY (" . implode(', ', $aPrimaryKey) . ")";
     }
 
     // Build the table definition.
@@ -364,12 +372,10 @@ class LeanDB
 
     $aHeaders = array_map(fn($cKey) => "`{$cKey}`", $aHeaders);
     $cHeaders = '(' . implode(', ', $aHeaders) . ')';
+    $cValues  = implode(",\n", $aRows);
+
     return [
-      implode(",\n", [
-        $cHeaders,
-        'VALUES',
-        ...$aRows
-      ]),
+      $cHeaders . "\nVALUES\n" . $cValues,
       $aArgs,
     ];
   }
