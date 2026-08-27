@@ -65,7 +65,7 @@ class LeanDB
 
     // Timestamps and soft deletes.
     if ($bSoftDeletes) {
-      $aFields['__deleted_at'] = [LeanDB::DATETIME | LeanDB::NULLABLE, null, null, 'Deletion stamp'];
+      $aFields['__deleted_at'] = [LeanDB::DATETIME | LeanDB::NULLABLE | LeanDB::INDEX, null, null, 'Deletion stamp'];
     }
 
     if ($bTimestamps) {
@@ -378,5 +378,19 @@ class LeanDB
       $cHeaders . "\nVALUES\n" . $cValues,
       $aArgs,
     ];
+  }
+
+  /**
+   * Flushes model deletes from the database.
+   */
+  public static function FlushModelDeletes(string $cModel): void
+  {
+    $cTable = $cModel::TABLE;
+    $bSoftDeletes = $cModel::SOFT_DELETES;
+    $cConnection = $cModel::CONNECTION;
+
+    if (!$bSoftDeletes) return;
+
+    $oPDO = $cConnection::Query("DELETE FROM `$cTable` WHERE `__deleted_at` < DATE_SUB(NOW(), INTERVAL 1 HOUR);");
   }
 }
