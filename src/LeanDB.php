@@ -391,6 +391,9 @@ class LeanDB
 
     if (!$bSoftDeletes) return;
 
+    if (!preg_match('/^[\da-z_]+$/i', $cTable)) {
+      throw new \InvalidArgumentException('Invalid table name');
+    }
     $oPDO = $cConnection::Query("DELETE FROM `$cTable` WHERE `__deleted_at` < DATE_SUB(NOW(), INTERVAL 1 HOUR);");
   }
 }
