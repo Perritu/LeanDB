@@ -128,6 +128,9 @@ abstract class Model
     if (is_null($cTable)) {
       $cTable = array_reverse(explode('\\', static::class))[0];
     }
+    if (!preg_match('/^[\da-z_]+$/i', $cTable)) {
+      throw new \Exception('Model table can only have letters, numbers and underscore');
+    }
 
     [$cWhere, $aWhereParams] = LeanDB::BuildWhere($aCriteria);
     [$cSet, $aSetParams] = LeanDB::BuildSet($aFields);
